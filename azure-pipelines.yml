@@ -1,0 +1,44 @@
+name: 1.0.$(Rev:r)
+
+trigger:
+- master
+
+resources:
+- repo: self
+
+variables:
+  tag: '$(Build.BuildNumber)'
+
+stages:
+- stage: Build
+  displayName: Build image
+  jobs:
+  - job: Build
+    displayName: Build
+    pool:
+      vmImage: ubuntu-latest
+    steps: 
+    - task: Docker@2
+      inputs:
+        containerRegistry: 'dockerhub'
+        repository: 'ravidtemp/maven-hello-world'
+        command: 'build'
+        Dockerfile: '**/Dockerfile'
+        tags: '$(tag)'
+        arguments: '--build-arg VERSION=$(tag)'
+        addPipelineData: false
+        addBaseImageData: false
+      displayName: Docker build
+    - task: Docker@2
+      inputs:
+        containerRegistry: 'dockerhub'
+        repository: 'ravidtemp/maven-hello-world'
+        command: 'push'
+        tags: '$(tag)'
+        addPipelineData: false
+        addBaseImageData: false
+      displayName: Docker push
+    
+    - script: |
+        docker run ravidtemp/maven-hello-world:$(tag)
+      displayName: Docker run
